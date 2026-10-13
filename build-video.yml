@@ -1,0 +1,45 @@
+name: Build video and store in GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "JSON from n8n (title, description, tags, imageUrls, audioUrls, ...)"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: write   # lets the workflow create a Release in this repo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg and Python packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          pip install --upgrade requests pillow "av>=14" faster-whisper
+
+      - name: Build video
+        env:
+          PAYLOAD: ${{ inputs.payload }}
+        run: python build_video.py
+
+      - name: Store video in a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="video-${{ github.run_number }}-$(date +%Y%m%d-%H%M%S)"
+          TITLE="$(head -n 2 dist/metadata.txt | tail -n 1)"
+          gh release create "$TAG" dist/* \
+            --target "${{ github.sha }}" \
+            --title "${TITLE:-$TAG}" \
+            --notes-file dist/metadata.txt
+          echo "Release created: $TAG"
