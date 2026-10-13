@@ -467,7 +467,7 @@ def main():
         print(f"No outro video found at {outro_path} — skipping fade-to-black outro.", flush=True)
 
     if os.environ.get("YT_REFRESH_TOKEN"):
-        upload_to_youtube(final, payload, thumb)
+        upload_to_youtube(final, payload, thumb)#
     else:
         print("No YT_REFRESH_TOKEN set: skipping YouTube upload. "
               "Download the video from this run's Artifacts.", flush=True)
